@@ -12,24 +12,38 @@ import {
   CheckCircle2,
   Award,
   ArrowRight,
+  Upload,
+  Zap,
+  TrendingDown,
+  TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 import { formatTonne } from '../../utils/calculationEngine';
 
 export const ReportsPage: React.FC = () => {
-  const { business, metrics, filteredRecords, monthlyTrendData, showToast } = useApp();
+  const {
+    business,
+    metrics,
+    filteredRecords,
+    monthlyTrendData,
+    showToast,
+    currentESGData,
+    setIsESGUploadModalOpen,
+    downloadESGStatusPDF,
+  } = useApp();
 
-  const [reportType, setReportType] = useState<'ghg' | 'supplier' | 'audit'>('ghg');
+  const [reportType, setReportType] = useState<'esg' | 'ghg' | 'supplier'>('esg');
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleExportCSV = () => {
-    const headers = 'RecordID,Date,Activity,Scope,Category,Quantity,Unit,Factor,FactorUnit,kgCO2e,tCO2e,Quality,Source\n';
-    const rows = filteredRecords
+    const headers = 'Metric,Category,PreviousYear,CurrentYear,Unit,PctChange,Type,Source\n';
+    const rows = Object.values(currentESGData.metrics)
       .map(
-        (r) =>
-          `"${r.id}","${r.date}","${r.activityName}","${r.scope}","${r.category}",${r.quantity},"${r.unit}",${r.factorValue},"${r.factorUnit}",${r.co2eKg},${r.co2eTonne},"${r.dataQuality}","${r.source}"`
+        (m) =>
+          `"${m.label}","${m.category}",${m.previousValue ?? '""'},${m.currentValue ?? '""'},"${m.unit}","${m.percentageChange ?? 'N/A'}%","${m.valueType}","${m.source}"`
       )
       .join('\n');
 
@@ -37,18 +51,22 @@ export const ReportsPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `CarbonLens_Report_${business.name.replace(/\s+/g, '_')}_2026.csv`;
+    link.download = `CarbonLens_Audited_ESG_${currentESGData.companyName.replace(/\s+/g, '_')}_${currentESGData.reportingYear}.csv`;
     link.click();
-    showToast('Exported complete carbon inventory to CSV', 'success');
+    showToast('Exported audited company ESG disclosure to CSV', 'success');
   };
 
   const handleExportJSON = () => {
     const data = {
-      organization: business,
-      reportingYear: 2026,
-      standard: 'Greenhouse Gas Protocol Corporate Standard',
-      inventory: metrics,
-      records: filteredRecords,
+      organization: currentESGData.companyName,
+      ticker: currentESGData.ticker,
+      reportingYear: currentESGData.reportingYear,
+      previousYear: currentESGData.previousYear,
+      assuranceProvider: currentESGData.assuranceProvider,
+      assuranceStandard: currentESGData.assuranceStandard,
+      status: currentESGData.verificationStatus,
+      metrics: currentESGData.metrics,
+      multiYearTrend: currentESGData.multiYearTrend,
       exportTimestamp: new Date().toISOString(),
     };
 
@@ -56,10 +74,12 @@ export const ReportsPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `CarbonLens_ESG_Disclosure_${business.name.replace(/\s+/g, '_')}.json`;
+    link.download = `CarbonLens_Verified_ESG_${currentESGData.companyName.replace(/\s+/g, '_')}.json`;
     link.click();
-    showToast('Exported machine-readable JSON disclosure', 'success');
+    showToast('Exported machine-readable JSON ESG schema', 'success');
   };
+
+  const esg = currentESGData;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto animate-in fade-in duration-200">
@@ -70,38 +90,58 @@ export const ReportsPage: React.FC = () => {
             ESG & Carbon Accounting Reports
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Download audited emissions inventories and supplier sustainability disclosures.
+            Audited emissions inventories, official public disclosures, and third-party verified statements.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Generate Company ESG Status PDF Button */}
+          <button
+            onClick={() => downloadESGStatusPDF()}
+            className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Generate Company ESG Status PDF</span>
+          </button>
+
+          {/* PDF Upload Pipeline */}
+          <button
+            onClick={() => setIsESGUploadModalOpen(true)}
+            className="px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Upload ESG PDF</span>
+          </button>
+
           <button
             onClick={handleExportCSV}
-            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            <span>CSV Data Dump</span>
+            <span>CSV</span>
           </button>
+
           <button
             onClick={handleExportJSON}
-            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <Code className="w-3.5 h-3.5 text-sky-600" />
-            <span>JSON Schema</span>
+            <span>JSON</span>
           </button>
+
           <button
             onClick={handlePrint}
-            className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm"
+            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
-            <span>Print / Save PDF</span>
+            <Printer className="w-3.5 h-3.5" />
+            <span>Print</span>
           </button>
         </div>
       </div>
 
       {/* Report Template Selector & Industrial Audit Verification Strip (Hidden during print) */}
       <div className="space-y-4 print:hidden">
-        {/* Subtle Industrial Visual Context Accent Card with Floating Animation */}
+        {/* Verified Facility Visual Context Accent Card with Floating Animation */}
         <div className="bg-white rounded-2xl p-5 border border-slate-900/8 shadow-md animate-float-gentle card-hover-lift hover:-translate-y-[2px] transition-all flex flex-col md:flex-row items-center justify-between gap-5">
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="w-28 sm:w-36 h-20 sm:h-24 rounded-2xl overflow-hidden bg-slate-900 shrink-0 border border-slate-200/80 shadow-xs relative">
@@ -116,26 +156,28 @@ export const ReportsPage: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                  AUDITED BOUNDARY • FACILITY 01
+                  AUDITED BOUNDARY • {esg.ticker}
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">•</span>
                 <span className="text-[10px] font-semibold text-slate-600 font-mono">
-                  {metrics.totalEmissionsTonne.toFixed(1)} tCO₂e Total
+                  {(esg.metrics.totalEmissionsMarket.currentValue! / 1000000).toFixed(2)}M MT CO₂e Net
                 </span>
               </div>
-              <h4 className="text-sm font-bold text-slate-900 mt-0.5">{business.name} Manufacturing Plant</h4>
-              <p className="text-xs text-slate-500 mt-0.5">ISO 14064-1 & GHG Protocol Scope 1-3 corporate inventory disclosure.</p>
+              <h4 className="text-sm font-bold text-slate-900 mt-0.5">{esg.companyName} Global Operations</h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {esg.sourceReportTitle} • Assured by {esg.assuranceProvider} under {esg.assuranceStandard}.
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200/60">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              Verified DEFRA 2026
+              {esg.verificationStatus}
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 text-[11px] font-semibold border border-slate-200">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Audit Trail Intact
+              Apex Assured
             </span>
           </div>
         </div>
@@ -144,18 +186,28 @@ export const ReportsPage: React.FC = () => {
         <div className="flex items-center gap-2 text-xs">
           <span className="text-slate-500 font-medium">Report Template:</span>
           <button
+            onClick={() => setReportType('esg')}
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
+              reportType === 'esg'
+                ? 'bg-emerald-700 text-white shadow-2xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            Audited Company ESG Status Report
+          </button>
+          <button
             onClick={() => setReportType('ghg')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
               reportType === 'ghg'
                 ? 'bg-emerald-700 text-white shadow-2xs'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >
-            GHG Protocol Annual Inventory
+            GHG Protocol Scopes 1-3 Inventory
           </button>
           <button
             onClick={() => setReportType('supplier')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg font-medium transition-colors cursor-pointer ${
               reportType === 'supplier'
                 ? 'bg-emerald-700 text-white shadow-2xs'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
@@ -179,91 +231,160 @@ export const ReportsPage: React.FC = () => {
               </div>
               <span className="font-bold text-lg text-slate-900">CarbonLens</span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Official Summary
+                Official Statement
               </span>
             </div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              {reportType === 'ghg' ? 'Corporate Greenhouse Gas Inventory' : 'Customer Supply Chain ESG Disclosure'}
+              {reportType === 'esg'
+                ? `${esg.companyName} ESG Status & Verification Report`
+                : reportType === 'ghg'
+                ? 'Corporate Greenhouse Gas Inventory (Scopes 1-3)'
+                : 'Customer Supply Chain ESG Disclosure'}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Reporting Period: Calendar Year 2026 • Published on {new Date().toLocaleDateString()}
+              Reporting Periods: {esg.previousYear} (Previous Year) vs {esg.reportingYear} (Latest Year) • Published {new Date().toLocaleDateString()}
             </p>
           </div>
 
           <div className="text-right text-xs text-slate-500 space-y-0.5">
-            <div className="font-bold text-slate-900 text-sm">{business.name}</div>
-            <div>{business.city}, {business.country}</div>
-            <div>Sector: {business.industry}</div>
-            <div>Headcount: {business.employees} FTEs</div>
+            <div className="font-bold text-slate-900 text-sm">{esg.companyName} ({esg.ticker})</div>
+            <div>{esg.headquarters}</div>
+            <div>Sector: {esg.industry}</div>
+            <div>Headcount: {esg.employees.toLocaleString()} FTEs</div>
           </div>
         </div>
 
         {/* Executive Summary Metrics Box */}
         <div className="p-6 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Executive Summary</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Executive Summary</h3>
+            <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Verified by {esg.assuranceProvider}
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="floating-info-card-1">
               <div className="attractive-info-card p-4 rounded-xl shadow-2xs h-full flex flex-col justify-between">
-                <span className="text-xs text-slate-500 block">Total Footprint</span>
-                <span className="text-2xl font-black text-slate-900 mt-1">{metrics.totalEmissionsTonne.toFixed(1)} tCO₂e</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500 block">Total Net Emissions</span>
+                  <span className="text-[9px] font-bold text-emerald-700">[Calculated]</span>
+                </div>
+                <span className="text-2xl font-black text-slate-900 mt-1">
+                  {(esg.metrics.totalEmissionsMarket.currentValue! / 1000000).toFixed(2)}M MT
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 mt-1">
+                  +{esg.metrics.totalEmissionsMarket.percentageChange}% vs {esg.previousYear}
+                </span>
               </div>
             </div>
+
             <div className="floating-info-card-2">
               <div className="attractive-info-card p-4 rounded-xl shadow-2xs h-full flex flex-col justify-between">
-                <span className="text-xs text-slate-500 block">Scope 1 (Direct)</span>
-                <span className="text-xl font-bold text-orange-600 mt-1">{metrics.scope1Tonne.toFixed(1)} tCO₂e</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500 block">Scope 1 (Direct)</span>
+                  <span className="text-[9px] font-bold text-slate-600">[Reported]</span>
+                </div>
+                <span className="text-xl font-bold text-orange-600 mt-1">
+                  {(esg.metrics.scope1.currentValue! / 1000).toFixed(0)}k MT
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-700 mt-1">
+                  {esg.metrics.scope1.percentageChange}% vs {esg.previousYear}
+                </span>
               </div>
             </div>
+
             <div className="floating-info-card-3">
               <div className="attractive-info-card p-4 rounded-xl shadow-2xs h-full flex flex-col justify-between">
-                <span className="text-xs text-slate-500 block">Scope 2 (Electricity)</span>
-                <span className="text-xl font-bold text-sky-600 mt-1">{metrics.scope2Tonne.toFixed(1)} tCO₂e</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500 block">Scope 2 (Market)</span>
+                  <span className="text-[9px] font-bold text-slate-600">[Reported]</span>
+                </div>
+                <span className="text-xl font-bold text-sky-600 mt-1">
+                  {(esg.metrics.scope2Market.currentValue! / 1000).toFixed(0)}k MT
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 mt-1">
+                  +{esg.metrics.scope2Market.percentageChange}% vs {esg.previousYear}
+                </span>
               </div>
             </div>
+
             <div className="floating-info-card-4">
               <div className="attractive-info-card p-4 rounded-xl shadow-2xs h-full flex flex-col justify-between">
-                <span className="text-xs text-slate-500 block">Scope 3 (Value Chain)</span>
-                <span className="text-xl font-bold text-emerald-600 mt-1">{metrics.scope3Tonne.toFixed(1)} tCO₂e</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500 block">Scope 3 (Value Chain)</span>
+                  <span className="text-[9px] font-bold text-slate-600">[Reported]</span>
+                </div>
+                <span className="text-xl font-bold text-indigo-600 mt-1">
+                  {(esg.metrics.scope3.currentValue! / 1000000).toFixed(2)}M MT
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 mt-1">
+                  +{esg.metrics.scope3.percentageChange}% vs {esg.previousYear}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Scope Breakdown Table */}
+        {/* Detailed Previous vs Current Year ESG Table */}
         <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Emissions by Operational Scope</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Verified Public Disclosures ({esg.previousYear} vs {esg.reportingYear})
+            </h3>
+            <span className="text-xs text-slate-400">All required numeric values ≥ 0</span>
+          </div>
+
           <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
             <thead className="bg-slate-100 text-slate-700 font-semibold">
               <tr>
-                <th className="p-3">GHG Scope</th>
-                <th className="p-3">Core Activities</th>
-                <th className="p-3">Calculation Basis</th>
-                <th className="p-3 text-right">tCO₂e</th>
-                <th className="p-3 text-right">% of Total</th>
+                <th className="p-3">Disclosure Field</th>
+                <th className="p-3">Category</th>
+                <th className="p-3 text-right">{esg.previousYear}</th>
+                <th className="p-3 text-right">{esg.reportingYear}</th>
+                <th className="p-3">Unit</th>
+                <th className="p-3 text-right">YoY % Change</th>
+                <th className="p-3">Type</th>
+                <th className="p-3">Official Citation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-600">
-              <tr>
-                <td className="p-3 font-semibold text-orange-600">Scope 1 (Direct)</td>
-                <td className="p-3">Boilers, delivery fleet vehicles, refrigerant top-ups</td>
-                <td className="p-3">Invoiced fuel litres & gas utility meter readings</td>
-                <td className="p-3 text-right font-mono font-bold text-slate-900">{metrics.scope1Tonne.toFixed(1)}</td>
-                <td className="p-3 text-right">{((metrics.scope1Tonne / (metrics.totalEmissionsTonne || 1)) * 100).toFixed(1)}%</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-semibold text-sky-600">Scope 2 (Energy)</td>
-                <td className="p-3">Grid purchased electricity for facility operations</td>
-                <td className="p-3">CEA National Grid Average Factor (0.820 kg/kWh)</td>
-                <td className="p-3 text-right font-mono font-bold text-slate-900">{metrics.scope2Tonne.toFixed(1)}</td>
-                <td className="p-3 text-right">{((metrics.scope2Tonne / (metrics.totalEmissionsTonne || 1)) * 100).toFixed(1)}%</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-semibold text-emerald-600">Scope 3 (Value Chain)</td>
-                <td className="p-3">Packaging procurement, waste disposal, staff commuting</td>
-                <td className="p-3">DEFRA material factors & surveyed commute averages</td>
-                <td className="p-3 text-right font-mono font-bold text-slate-900">{metrics.scope3Tonne.toFixed(1)}</td>
-                <td className="p-3 text-right">{((metrics.scope3Tonne / (metrics.totalEmissionsTonne || 1)) * 100).toFixed(1)}%</td>
-              </tr>
+              {Object.values(esg.metrics).map((metric) => {
+                const isPositive = (metric.percentageChange || 0) > 0;
+                return (
+                  <tr key={metric.key} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3 font-semibold text-slate-900">
+                      <div>{metric.label}</div>
+                      <div className="text-[10px] text-slate-400 font-normal">
+                        {metric.calculationMethod}
+                      </div>
+                    </td>
+                    <td className="p-3 capitalize text-slate-500">{metric.category}</td>
+                    <td className="p-3 text-right font-mono text-slate-700">
+                      {metric.previousValue !== null ? metric.previousValue.toLocaleString() : <span className="italic text-slate-400">Not reported</span>}
+                    </td>
+                    <td className="p-3 text-right font-mono font-bold text-slate-900">
+                      {metric.currentValue !== null ? metric.currentValue.toLocaleString() : <span className="italic text-slate-400">Not reported</span>}
+                    </td>
+                    <td className="p-3 text-slate-500">{metric.unit}</td>
+                    <td className="p-3 text-right font-semibold">
+                      {metric.percentageChange !== null ? (
+                        <span className={isPositive ? 'text-amber-700' : 'text-emerald-700'}>
+                          {isPositive ? '+' : ''}{metric.percentageChange}%
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        [{metric.valueType}]
+                      </span>
+                    </td>
+                    <td className="p-3 text-[11px] text-slate-500">{metric.source}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -273,10 +394,10 @@ export const ReportsPage: React.FC = () => {
           <div className="p-4 rounded-xl attractive-info-card space-y-2 text-xs">
             <div className="flex items-center gap-2 text-emerald-800 font-bold">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Target Commitment: {business.targetReductionPct}% Reduction by {business.targetYear}</span>
+              <span>Target Commitment: Carbon Negative by 2030 & 100% Zero-Carbon Electricity</span>
             </div>
             <p className="text-slate-700 leading-relaxed">
-              {business.name} has committed to reducing gross Scope 1 and Scope 2 operational emissions against baseline year {business.baselineYear}. Year-to-date performance demonstrates an 8.4% reduction, primarily achieved through heating efficiency improvements and fleet route rationalization.
+              {esg.companyName} has contracted over 23.6 GW of renewable energy PPAs to match 100% of global electricity consumption. Direct Scope 1 emissions fell 9.0% year-over-year, while total emissions grew 19.0% due to data center construction and semiconductor manufacturing for cloud and artificial intelligence infrastructure.
             </p>
           </div>
         </div>
@@ -285,10 +406,10 @@ export const ReportsPage: React.FC = () => {
         <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-500 space-y-1">
           <div className="flex items-center gap-1.5 font-semibold text-slate-700">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>GHG Protocol Corporate Standard Compliance Statement</span>
+            <span>Independent Third-Party Limited Assurance Statement</span>
           </div>
           <p className="leading-relaxed">
-            This report was prepared in accordance with the World Resources Institute (WRI) and World Business Council for Sustainable Development (WBCSD) Greenhouse Gas Protocol Corporate Accounting and Reporting Standard. All activity records are backed by verifiable evidentiary sources.
+            {esg.assuranceDetails.opinion} Conducted by {esg.assuranceProvider} under {esg.assuranceStandard}. Global Operational Control boundary verified on {esg.assuranceDetails.statementDate}.
           </p>
         </div>
       </div>

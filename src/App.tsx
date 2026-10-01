@@ -17,6 +17,7 @@ import { CSVImportModal } from './components/emissions/CSVImportModal';
 import { CalculationAuditModal } from './components/common/CalculationAuditModal';
 import { AuthModal } from './components/auth/AuthModal';
 import { ToastContainer } from './components/common/ToastContainer';
+import { ESGUploadModal } from './components/esg/ESGUploadModal';
 
 const AppContent: React.FC = () => {
   const { activeTab } = useApp();
@@ -91,6 +92,7 @@ const AppContent: React.FC = () => {
       <AddRecordModal />
       <CSVImportModal />
       <CalculationAuditModal />
+      <ESGUploadModal />
       <AuthModal />
       <ToastContainer />
     </div>

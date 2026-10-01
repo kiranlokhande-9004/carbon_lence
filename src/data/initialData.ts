@@ -1,18 +1,18 @@
 import { EmissionRecord, EmissionFactor, BusinessProfile, AuditLog, AIRecommendation, TeamMember, NotificationItem } from '../types';
 
 export const initialBusinessProfile: BusinessProfile = {
-  id: 'biz-greenbrew-01',
-  name: 'GreenBrew Foods Pvt. Ltd.',
-  industry: 'Food & Beverage',
-  employees: 42,
-  country: 'India',
-  city: 'Bengaluru',
-  reportingYear: 2026,
-  baselineYear: 2024,
-  targetReductionPct: 30,
-  targetYear: 2028,
-  currency: 'INR',
-  carbonGoal: 'Reduce emissions and prepare supply chain disclosures',
+  id: 'biz-msft-01',
+  name: 'Microsoft Corporation',
+  industry: 'Cloud Computing, Software & Digital Infrastructure',
+  employees: 221000,
+  country: 'United States',
+  city: 'Redmond, WA',
+  reportingYear: 2023,
+  baselineYear: 2020,
+  targetReductionPct: 55,
+  targetYear: 2030,
+  currency: 'USD',
+  carbonGoal: 'Carbon Negative by 2030, 100% Zero-Carbon Electricity & Zero Waste',
 };
 
 export const initialTeamMembers: TeamMember[] = [

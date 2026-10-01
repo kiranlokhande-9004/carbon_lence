@@ -7,6 +7,8 @@ import {
   Settings,
   LogOut,
   Calendar,
+  Upload,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -20,6 +22,8 @@ export const Navbar: React.FC = () => {
     notifications,
     markNotificationRead,
     activeTab,
+    setIsESGUploadModalOpen,
+    currentESGData,
   } = useApp();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -31,50 +35,57 @@ export const Navbar: React.FC = () => {
     <header className="h-20 bg-white border-b border-slate-200/80 px-6 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs">
       {/* Left: Greeting and subtitle */}
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
-          Good morning, {business.name || 'GreenBrew Foods Pvt. Ltd.'}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
+            Good morning, {business.name || 'Microsoft Corporation'}
+          </h1>
+          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            Verified MSFT Data
+          </span>
+        </div>
         <p className="text-xs sm:text-sm text-slate-500 font-normal">
-          Here's how your environmental footprint is changing.
+          Audited environmental footprint & GHG emissions disclosure.
         </p>
       </div>
 
-      {/* Right: Date Selector, Notifications, Business Profile */}
-      <div className="flex items-center gap-3 sm:gap-4">
+      {/* Right: Upload ESG PDF, Date Selector, Notifications, Business Profile */}
+      <div className="flex items-center gap-2.5 sm:gap-3.5">
+        {/* Upload ESG PDF Action Button */}
+        <button
+          type="button"
+          onClick={() => setIsESGUploadModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+          title="Upload real company ESG report PDF"
+        >
+          <Upload className="w-3.5 h-3.5 text-emerald-700" />
+          <span className="hidden sm:inline">Upload ESG PDF</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+        </button>
+
         {/* Date / Period Selector */}
         <div className="flex items-center bg-slate-100/90 rounded-xl p-1 text-xs font-medium text-slate-700 border border-slate-200/70">
           <button
             type="button"
-            onClick={() => setReportingPeriod('2026')}
+            onClick={() => setReportingPeriod('2023')}
             className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-              reportingPeriod === '2026'
+              reportingPeriod === '2023' || reportingPeriod === '2026'
                 ? 'bg-white text-slate-900 shadow-xs font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            2026
+            2023
           </button>
           <button
             type="button"
-            onClick={() => setReportingPeriod('q1')}
+            onClick={() => setReportingPeriod('2022')}
             className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-              reportingPeriod === 'q1'
+              reportingPeriod === '2022'
                 ? 'bg-white text-slate-900 shadow-xs font-semibold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Q1
-          </button>
-          <button
-            type="button"
-            onClick={() => setReportingPeriod('q2')}
-            className={`px-2.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-              reportingPeriod === 'q2'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Q2
+            2022
           </button>
           <button
             type="button"
@@ -85,7 +96,7 @@ export const Navbar: React.FC = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            All Time
+            All Years
           </button>
         </div>
 

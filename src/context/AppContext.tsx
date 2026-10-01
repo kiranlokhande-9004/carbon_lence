@@ -17,6 +17,8 @@ import {
   initialTeamMembers,
 } from '../data/initialData';
 import { calculateEmissions } from '../utils/calculationEngine';
+import { CompanyESGData, defaultMicrosoftESGData } from '../data/microsoftESGData';
+import { generateCompanyESGStatusPDF } from '../utils/pdfGenerator';
 
 export type NavigationTab =
   | 'landing'
@@ -69,11 +71,19 @@ interface AppContextType {
   setIsAddRecordModalOpen: (open: boolean) => void;
   isCSVImportModalOpen: boolean;
   setIsCSVImportModalOpen: (open: boolean) => void;
+  isESGUploadModalOpen: boolean;
+  setIsESGUploadModalOpen: (open: boolean) => void;
   selectedRecordForAudit: EmissionRecord | null;
   setSelectedRecordForAudit: (record: EmissionRecord | null) => void;
   authModal: { isOpen: boolean; mode: 'login' | 'signup' | 'forgot' };
   openAuthModal: (mode: 'login' | 'signup' | 'forgot') => void;
   closeAuthModal: () => void;
+
+  // Real Company ESG Data & PDF Pipeline
+  currentESGData: CompanyESGData;
+  setCurrentESGData: (data: CompanyESGData) => void;
+  applyESGData: (data: CompanyESGData) => void;
+  downloadESGStatusPDF: (data?: CompanyESGData) => void;
 
   // Auth
   isAuthenticated: boolean;
@@ -112,7 +122,42 @@ const STORAGE_KEYS = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<NavigationTab>('landing');
-  const [reportingPeriod, setReportingPeriod] = useState<string>('2026');
+  const [reportingPeriod, setReportingPeriod] = useState<string>('2023');
+
+  // Real Company ESG Dataset State (defaults to verified Microsoft Corporation)
+  const [currentESGData, setCurrentESGData] = useState<CompanyESGData>(() => {
+    try {
+      const saved = localStorage.getItem('carbonlens_esg_data_v1');
+      return saved ? JSON.parse(saved) : defaultMicrosoftESGData;
+    } catch {
+      return defaultMicrosoftESGData;
+    }
+  });
+
+  const [isESGUploadModalOpen, setIsESGUploadModalOpen] = useState(false);
+
+  const applyESGData = (data: CompanyESGData) => {
+    setCurrentESGData(data);
+    try {
+      localStorage.setItem('carbonlens_esg_data_v1', JSON.stringify(data));
+    } catch (e) {
+      console.error(e);
+    }
+
+    setBusiness((prev) => ({
+      ...prev,
+      name: data.companyName,
+      industry: data.industry,
+      employees: data.employees,
+      reportingYear: data.reportingYear,
+      baselineYear: data.baselineYear,
+    }));
+    setReportingPeriod(String(data.reportingYear));
+  };
+
+  const downloadESGStatusPDF = (data?: CompanyESGData) => {
+    generateCompanyESGStatusPDF(data || currentESGData);
+  };
 
   // Business Profile
   const [business, setBusiness] = useState<BusinessProfile>(() => {
@@ -301,18 +346,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const total = s1 + s2 + s3;
     const avgQuality = filteredRecords.length > 0 ? Math.round(qualityPoints / filteredRecords.length) : 78;
 
-    // Reduction calculation relative to target (e.g. 18% progress toward 30% reduction)
+    // Verified company ESG numbers if corporate profile is active
+    const hasESG = Boolean(currentESGData?.metrics?.scope1?.currentValue);
+    const esgTotal = hasESG ? (currentESGData.metrics.totalEmissionsMarket.currentValue || total) : total;
+    const esgS1 = hasESG ? (currentESGData.metrics.scope1.currentValue || s1) : s1;
+    const esgS2 = hasESG ? (currentESGData.metrics.scope2Market.currentValue || s2) : s2;
+    const esgS3 = hasESG ? (currentESGData.metrics.scope3.currentValue || s3) : s3;
+    const esgDiff = hasESG ? (currentESGData.metrics.totalEmissionsMarket.percentageChange || 19.05) : -8.4;
+
     return {
-      totalEmissionsTonne: Math.round(total * 100) / 100,
-      scope1Tonne: Math.round(s1 * 100) / 100,
-      scope2Tonne: Math.round(s2 * 100) / 100,
-      scope3Tonne: Math.round(s3 * 100) / 100,
-      diffPreviousPeriodPct: -8.4,
+      totalEmissionsTonne: Math.round(esgTotal * 100) / 100,
+      scope1Tonne: Math.round(esgS1 * 100) / 100,
+      scope2Tonne: Math.round(esgS2 * 100) / 100,
+      scope3Tonne: Math.round(esgS3 * 100) / 100,
+      diffPreviousPeriodPct: esgDiff,
       targetProgressPct: 18.2, // 18.2% achieved toward 30% target
       dataQualityScore: avgQuality,
       recordCount: filteredRecords.length,
     };
-  }, [filteredRecords]);
+  }, [filteredRecords, currentESGData]);
 
   // Monthly trend chart data (Jan - Dec) comparing 2026 vs 2025
   const monthlyTrendData = useMemo(() => {
@@ -582,17 +634,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToDemo = () => {
     setBusiness(initialBusinessProfile);
+    setCurrentESGData(defaultMicrosoftESGData);
+    setReportingPeriod('2023');
+    try {
+      localStorage.setItem('carbonlens_esg_data_v1', JSON.stringify(defaultMicrosoftESGData));
+    } catch {}
     setRecords(initialEmissionRecords);
     setFactors(initialFactors);
     setAuditLogs(initialAuditLogs);
     setIsAuthenticated(true);
     setCurrentUser({
-      name: 'Ananya Sharma',
-      email: 'ananya@greenbrewfoods.com',
-      role: 'Sustainability Lead',
+      name: 'ESG Director',
+      email: 'sustainability@microsoft.com',
+      role: 'Corporate Sustainability Officer',
     });
     setActiveTab('dashboard');
-    showToast('Loaded demo workspace: GreenBrew Foods Pvt. Ltd.', 'info');
+    showToast('Loaded verified demo workspace: Microsoft Corporation (MSFT)', 'info');
   };
 
   return (
@@ -626,11 +683,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAddRecordModalOpen,
         isCSVImportModalOpen,
         setIsCSVImportModalOpen,
+        isESGUploadModalOpen,
+        setIsESGUploadModalOpen,
         selectedRecordForAudit,
         setSelectedRecordForAudit,
         authModal,
         openAuthModal,
         closeAuthModal,
+
+        currentESGData,
+        setCurrentESGData,
+        applyESGData,
+        downloadESGStatusPDF,
 
         isAuthenticated,
         currentUser,

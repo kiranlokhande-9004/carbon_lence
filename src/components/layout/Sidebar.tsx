@@ -11,6 +11,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Upload,
 } from 'lucide-react';
 
 interface NavItem {
@@ -33,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab } = useApp();
+  const { activeTab, setActiveTab, setIsESGUploadModalOpen } = useApp();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -110,8 +111,27 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Section: ONLY Settings (Help is removed completely) */}
-      <div className="p-3 border-t border-slate-100">
+      {/* Bottom Section: ESG PDF Upload & Settings */}
+      <div className="p-3 border-t border-slate-100 space-y-1">
+        <button
+          type="button"
+          onClick={() => setIsESGUploadModalOpen(true)}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/90 transition-all group relative cursor-pointer shadow-2xs ${
+            collapsed ? 'justify-center px-2' : ''
+          }`}
+          title={collapsed ? 'Upload ESG PDF' : undefined}
+        >
+          <Upload className="w-4 h-4 shrink-0 text-emerald-700 group-hover:scale-105 transition-transform" />
+          {!collapsed && (
+            <span className="truncate flex-1 text-left font-bold">Upload ESG PDF</span>
+          )}
+          {collapsed && (
+            <div className="absolute left-full ml-2 px-2.5 py-1 bg-slate-900 text-slate-100 text-xs rounded-md shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap">
+              Upload ESG PDF
+            </div>
+          )}
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveTab('settings')}
