@@ -1,0 +1,6 @@
+{
+  "name": "CarbonLens",
+  "description": "SME-focused carbon accounting and ESG reporting platform to measure emissions, understand impact, and build a cleaner business.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
