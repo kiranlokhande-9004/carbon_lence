@@ -205,7 +205,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
     },
     {
       formula: 'HFCs',
-      name: 'Hydrofluorocarbons',
+      name: 'Refrigerants',
       chemicalClass: 'Fluorinated Refrigerant Gases (R-410A / R-134a blend)',
       gasCategory: 'ghg',
       reportedMass: 47.1,
@@ -222,7 +222,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
     },
     {
       formula: 'PFCs',
-      name: 'Perfluorocarbons',
+      name: 'Industrial gases',
       chemicalClass: 'Fluorinated Semiconductor Etchants (CF₄ / C₂F₆)',
       gasCategory: 'ghg',
       reportedMass: 2.0,

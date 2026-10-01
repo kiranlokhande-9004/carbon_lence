@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@theme {
+  --font-size-xs: 0.875rem;
+  --font-size-sm: 0.9375rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -17,8 +28,67 @@ html {
 body {
   font-family: var(--font-sans);
   color: #0f172a;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   background-color: #f8fafc;
+}
+
+/* Global readable font scale enforcement across the entire application */
+table {
+  font-size: 14.5px !important;
+}
+
+th {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}
+
+td {
+  font-size: 14.5px !important;
+}
+
+nav, aside, header {
+  font-size: 14.5px !important;
+}
+
+/* Ensure all small text classes scale to a readable 14-15px */
+.text-xs,
+[class*="text-xs"],
+[class*="text-[9px]"],
+[class*="text-[10px]"],
+[class*="text-[11px]"],
+[class*="text-[12px]"],
+[class*="text-[13px]"] {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.text-sm,
+[class*="text-sm"] {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+/* Form inputs, selects and buttons font size */
+input, select, textarea, button {
+  font-size: 14px !important;
+}
+
+/* Card values & headings proportional scaling */
+.kpi-value,
+.stat-value {
+  font-size: 1.85rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Recharts labels, tooltips and legends */
+.recharts-text,
+.recharts-legend-item-text,
+.recharts-default-tooltip,
+.recharts-tooltip-item {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
 }
 
 html, body, #root {

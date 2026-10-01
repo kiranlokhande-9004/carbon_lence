@@ -47,6 +47,7 @@ export const MainDashboard: React.FC = () => {
     downloadESGStatusPDF,
     setActiveTab,
     showToast,
+    metrics: appMetrics,
   } = useApp();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -75,14 +76,10 @@ export const MainDashboard: React.FC = () => {
   const isPreviousSelected = reportingPeriod === String(previousYear);
   const activeYearLabel = isPreviousSelected ? previousYear : reportingYear;
 
-  // Selected period values derived strictly from currentESGData
-  const activeTotalEmissions = isPreviousSelected
-    ? (metrics.totalEmissionsMarket.previousValue ?? 0)
-    : (metrics.totalEmissionsMarket.currentValue ?? 0);
-
+  // Selected period values derived from active dataset and live recalculations
   const activeScope1 = isPreviousSelected
     ? (metrics.scope1.previousValue ?? 0)
-    : (metrics.scope1.currentValue ?? 0);
+    : (appMetrics?.scope1Tonne || metrics.scope1.currentValue || 0);
 
   const activeScope2 = isPreviousSelected
     ? (metrics.scope2Market.previousValue ?? 0)
@@ -91,6 +88,10 @@ export const MainDashboard: React.FC = () => {
   const activeScope3 = isPreviousSelected
     ? (metrics.scope3.previousValue ?? 0)
     : (metrics.scope3.currentValue ?? 0);
+
+  const activeTotalEmissions = isPreviousSelected
+    ? (metrics.totalEmissionsMarket.previousValue ?? 0)
+    : (appMetrics?.totalEmissionsTonne || (activeScope1 + activeScope2 + activeScope3));
 
   // Electricity consumption values in kWh and MWh
   const elecKWh = isPreviousSelected

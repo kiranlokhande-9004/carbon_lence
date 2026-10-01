@@ -66,11 +66,14 @@ export interface AuditLog {
   id: string;
   timestamp: string;
   user: string;
-  action: 'Created' | 'Updated' | 'Deleted' | 'Factor Changed' | 'Report Generated' | 'CSV Imported';
+  action: 'Created' | 'Updated' | 'Deleted' | 'Factor Changed' | 'Report Generated' | 'CSV Imported' | 'ESG Data Ingested' | 'Recalculation';
   record: string;
+  fieldChanged: string;
   prevValue?: string;
   newValue: string;
   category: string;
+  source: string;
+  calculationMethod: string;
 }
 
 export interface AIRecommendation {
