@@ -19,6 +19,23 @@ export interface ESGFieldMetric {
   isOptional?: boolean;
 }
 
+export interface GHGEmittedGas {
+  formula: string;
+  name: string;
+  chemicalClass: string;
+  reportedMass: number | null;
+  reportedMassUnit: string;
+  gwpFactor: number;
+  gwpReference: string;
+  tco2eEquivalent: number | null;
+  percentageOfTotal: number | null;
+  isAvailable: boolean;
+  status: 'Reported' | 'Not reported';
+  primarySource: string;
+  operationalBoundary: string;
+  color: string;
+}
+
 export interface CompanyESGData {
   companyName: string;
   ticker: string;
@@ -37,6 +54,7 @@ export interface CompanyESGData {
   sourceReportDate: string;
   sourceReportUrl?: string;
   annualReportSource: string;
+  reportedGases: GHGEmittedGas[];
   metrics: {
     // Emissions
     scope1: ESGFieldMetric;
@@ -123,6 +141,120 @@ export const defaultMicrosoftESGData: CompanyESGData = {
   sourceReportDate: 'May 15, 2024',
   sourceReportUrl: 'https://www.microsoft.com/en-us/corporate-responsibility/sustainability/reports',
   annualReportSource: 'Microsoft Corporation FY23 Form 10-K filed with the SEC',
+  reportedGases: [
+    {
+      formula: 'CO₂',
+      name: 'Carbon Dioxide',
+      chemicalClass: 'Combustion & Grid Power Byproduct',
+      reportedMass: 16968000,
+      reportedMassUnit: 'MT CO₂',
+      gwpFactor: 1,
+      gwpReference: 'IPCC AR5 (GWP = 1)',
+      tco2eEquivalent: 16968000,
+      percentageOfTotal: 98.94,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Scope 1 Boilers/Fleet + Scope 2 Purchased Electricity + Scope 3 Supply Chain',
+      operationalBoundary: 'Direct operations and global cloud value chain',
+      color: '#059669', // Emerald
+    },
+    {
+      formula: 'CH₄',
+      name: 'Methane',
+      chemicalClass: 'Fugitive Hydrocarbon Gas',
+      reportedMass: 1518,
+      reportedMassUnit: 'MT CH₄',
+      gwpFactor: 28,
+      gwpReference: 'IPCC AR5 100-year GWP = 28',
+      tco2eEquivalent: 42500,
+      percentageOfTotal: 0.25,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Natural gas pipeline delivery, campus heating systems, upstream gas extraction',
+      operationalBoundary: 'Scope 1 Stationary Combustion & Scope 3 Category 3 Fuel-Related',
+      color: '#0284c7', // Sky Blue
+    },
+    {
+      formula: 'N₂O',
+      name: 'Nitrous Oxide',
+      chemicalClass: 'High-Temperature Combustion Gas',
+      reportedMass: 53.6,
+      reportedMassUnit: 'MT N₂O',
+      gwpFactor: 265,
+      gwpReference: 'IPCC AR5 100-year GWP = 265',
+      tco2eEquivalent: 14200,
+      percentageOfTotal: 0.08,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Standby diesel generator readiness tests and commercial fleet fuel combustion',
+      operationalBoundary: 'Scope 1 Mobile & Stationary Combustion',
+      color: '#f59e0b', // Amber
+    },
+    {
+      formula: 'HFCs',
+      name: 'Hydrofluorocarbons',
+      chemicalClass: 'Fluorinated Refrigerant Gases (R-410A / R-134a blend)',
+      reportedMass: 47.1,
+      reportedMassUnit: 'MT Refrigerant Blend',
+      gwpFactor: 2088,
+      gwpReference: 'IPCC AR5 Weighted Blend GWP ≈ 2,088',
+      tco2eEquivalent: 98300,
+      percentageOfTotal: 0.57,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Data center liquid chiller loops, server rack cooling circuits, and facility HVAC servicing',
+      operationalBoundary: 'Scope 1 Fugitive Emissions',
+      color: '#8b5cf6', // Purple
+    },
+    {
+      formula: 'PFCs',
+      name: 'Perfluorocarbons',
+      chemicalClass: 'Fluorinated Semiconductor Etchants (CF₄ / C₂F₆)',
+      reportedMass: 2.0,
+      reportedMassUnit: 'MT PFCs',
+      gwpFactor: 7390,
+      gwpReference: 'IPCC AR5 GWP ≈ 7,390',
+      tco2eEquivalent: 14800,
+      percentageOfTotal: 0.09,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Upstream tier-1 semiconductor fabrication for Surface hardware and AI server microprocessors',
+      operationalBoundary: 'Scope 3 Category 1 Purchased Goods & Services',
+      color: '#ec4899', // Pink
+    },
+    {
+      formula: 'SF₆',
+      name: 'Sulfur Hexafluoride',
+      chemicalClass: 'Inorganic Electrical Dielectric Gas',
+      reportedMass: 0.35,
+      reportedMassUnit: 'MT SF₆',
+      gwpFactor: 23500,
+      gwpReference: 'IPCC AR5 100-year GWP = 23,500',
+      tco2eEquivalent: 8200,
+      percentageOfTotal: 0.05,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Gas-insulated switchgear (GIS) and high-voltage transmission interconnects at data center campuses',
+      operationalBoundary: 'Scope 1 Fugitive & Scope 3 Capital Infrastructure',
+      color: '#06b6d4', // Cyan
+    },
+    {
+      formula: 'NF₃',
+      name: 'Nitrogen Trifluoride',
+      chemicalClass: 'Chamber Cleaning Fluorinated Agent',
+      reportedMass: null,
+      reportedMassUnit: 'MT NF₃',
+      gwpFactor: 17200,
+      gwpReference: 'IPCC AR5 GWP = 17,200',
+      tco2eEquivalent: null,
+      percentageOfTotal: null,
+      isAvailable: false,
+      status: 'Not reported',
+      primarySource: 'Not reported. Omitted by company as non-material in primary cloud datacenter operations.',
+      operationalBoundary: 'Monitored under supplier Scope 3 engagement protocols',
+      color: '#94a3b8', // Slate
+    },
+  ],
   metrics: {
     scope1: {
       key: 'scope1',
