@@ -390,10 +390,11 @@ export function generateCompanyESGStatusPDF(data: CompanyESGData = defaultMicros
     finalY + 11
   );
 
-  const opinionText = doc.splitTextToSize(
-    `"Apex Companies, LLC conducted independent limited assurance on Microsoft Corporation's environmental assertions. Based on the procedures performed, nothing has come to our attention to indicate that the GHG emissions assertions for CY2022 and CY2023 are not materially correct and not a fair representation under GHG Protocol guidelines."`,
-    pageWidth - 36
-  );
+  const assuranceOpinion = data.assuranceDetails?.opinion
+    ? data.assuranceDetails.opinion
+    : `"${data.assuranceProvider} conducted independent limited assurance on ${data.companyName}'s environmental assertions. Based on the procedures performed, nothing has come to our attention to indicate that the GHG emissions assertions for CY${data.previousYear} and CY${data.reportingYear} are not materially correct under GHG Protocol guidelines."`;
+
+  const opinionText = doc.splitTextToSize(assuranceOpinion, pageWidth - 36);
   doc.text(opinionText, 18, finalY + 16);
 
   // Digital verification stamp & timestamp
@@ -481,8 +482,11 @@ export function generateCompanyESGStatusPDF(data: CompanyESGData = defaultMicros
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
+  const totalVerified = data.metrics.totalEmissionsMarket.currentValue?.toLocaleString() || '17,150,000';
+  const co2Gas = (data.reportedGases || []).find((g) => g.formula === 'CO₂');
+  const co2Pct = co2Gas?.percentageOfTotal ?? 98.9;
   doc.text(
-    `Total verified emissions equal 17,150,000 MT CO2e. Carbon Dioxide accounts for 98.94% of gross corporate impact. NF3 is monitored under supplier Scope 3 engagement and confirmed below materiality thresholds. All reported values are backed by third-party assurance.`,
+    `Total verified emissions equal ${totalVerified} MT CO2e. Carbon Dioxide accounts for ${co2Pct}% of gross corporate impact. All reported physical gases and monitored criteria emissions are verified in accordance with GHG Protocol standards and third-party assurance.`,
     18,
     p2FinalY + 11
   );

@@ -171,13 +171,13 @@ export const ReportsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-[11px] font-semibold border border-emerald-200/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200/80">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
               {esg.verificationStatus}
             </span>
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 text-[11px] font-semibold border border-slate-200">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Apex Assured
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-800 text-xs font-bold border border-slate-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              {esg.assuranceProvider}
             </span>
           </div>
         </div>
@@ -394,10 +394,10 @@ export const ReportsPage: React.FC = () => {
           <div className="p-4 rounded-xl attractive-info-card space-y-2 text-xs">
             <div className="flex items-center gap-2 text-emerald-800 font-bold">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Target Commitment: Carbon Negative by 2030 & 100% Zero-Carbon Electricity</span>
+              <span>Target Commitment: Climate & Environmental Sustainability Roadmap</span>
             </div>
-            <p className="text-slate-700 leading-relaxed">
-              {esg.companyName} has contracted over 23.6 GW of renewable energy PPAs to match 100% of global electricity consumption. Direct Scope 1 emissions fell 9.0% year-over-year, while total emissions grew 19.0% due to data center construction and semiconductor manufacturing for cloud and artificial intelligence infrastructure.
+            <p className="text-slate-700 leading-relaxed text-xs">
+              {esg.companyName} reported {esg.metrics.renewableElectricityPct.currentValue}% matched renewable electricity coverage. Direct Scope 1 emissions changed {esg.metrics.scope1.percentageChange}% YoY, with Scope 2 market emissions changing {esg.metrics.scope2Market.percentageChange}% YoY and Scope 3 supply chain emissions changing {esg.metrics.scope3.percentageChange}% YoY across verified organizational boundaries.
             </p>
           </div>
         </div>

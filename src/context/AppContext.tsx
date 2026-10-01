@@ -122,7 +122,7 @@ const STORAGE_KEYS = {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<NavigationTab>('landing');
-  const [reportingPeriod, setReportingPeriod] = useState<string>('2023');
+  const [reportingPeriod, setReportingPeriod] = useState<string>(() => String(defaultMicrosoftESGData.reportingYear));
 
   // Real Company ESG Dataset State (defaults to verified Microsoft Corporation)
   const [currentESGData, setCurrentESGData] = useState<CompanyESGData>(() => {
@@ -635,7 +635,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetToDemo = () => {
     setBusiness(initialBusinessProfile);
     setCurrentESGData(defaultMicrosoftESGData);
-    setReportingPeriod('2023');
+    setReportingPeriod(String(defaultMicrosoftESGData.reportingYear));
     try {
       localStorage.setItem('carbonlens_esg_data_v1', JSON.stringify(defaultMicrosoftESGData));
     } catch {}

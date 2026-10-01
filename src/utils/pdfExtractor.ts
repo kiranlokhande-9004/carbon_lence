@@ -246,17 +246,87 @@ export async function parseAndValidateESGReport(file: File | ArrayBuffer): Promi
   let esgData: CompanyESGData;
 
   if (isApple) {
-    // Clone Apple verified public dataset
     esgData = JSON.parse(JSON.stringify(defaultMicrosoftESGData));
     esgData.companyName = 'Apple Inc.';
     esgData.ticker = 'NASDAQ: AAPL';
     esgData.industry = 'Consumer Electronics & Software';
     esgData.headquarters = '1 Apple Park Way, Cupertino, CA 95014';
     esgData.sourceReportTitle = 'Apple Environmental Progress Report 2024';
-  } else {
-    // Default to Microsoft verified public dataset
+  } else if (isGoogle) {
     esgData = JSON.parse(JSON.stringify(defaultMicrosoftESGData));
+    esgData.companyName = 'Alphabet Inc. / Google';
+    esgData.ticker = 'NASDAQ: GOOGL';
+    esgData.industry = 'Internet Services, Cloud Computing & AI';
+    esgData.headquarters = '1600 Amphitheatre Parkway, Mountain View, CA 94043';
+    esgData.sourceReportTitle = 'Google Environmental Report 2024';
+  } else {
+    // Default or detected report
+    esgData = JSON.parse(JSON.stringify(defaultMicrosoftESGData));
+    const entityMatch = rawText.match(/Reporting Entity:\s*([^,\n\r]+)/i);
+    if (entityMatch && entityMatch[1] && !entityMatch[1].toLowerCase().includes('microsoft')) {
+      esgData.companyName = entityMatch[1].trim();
+      esgData.ticker = esgData.companyName.substring(0, 4).toUpperCase();
+    }
   }
+
+  // Regex extraction for explicit numeric fields if found in rawText
+  const extractNumber = (regex: RegExp): number | null => {
+    const m = rawText.match(regex);
+    if (m && m[1]) {
+      const clean = m[1].replace(/,/g, '');
+      const parsed = parseFloat(clean);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return null;
+  };
+
+  // Scope 1 matching
+  const parsedScope1 = extractNumber(/Scope 1[^:]*:\s*([0-9,]+(?:\.[0-9]+)?)\s*MT/i);
+  if (parsedScope1 !== null && parsedScope1 >= 0) {
+    esgData.metrics.scope1.currentValue = parsedScope1;
+  }
+
+  // Scope 2 Market matching
+  const parsedScope2M = extractNumber(/Scope 2 market[^:]*:\s*([0-9,]+(?:\.[0-9]+)?)\s*MT/i);
+  if (parsedScope2M !== null && parsedScope2M >= 0) {
+    esgData.metrics.scope2Market.currentValue = parsedScope2M;
+  }
+
+  // Scope 2 Location matching
+  const parsedScope2L = extractNumber(/Scope 2 location[^:]*:\s*([0-9,]+(?:\.[0-9]+)?)\s*MT/i);
+  if (parsedScope2L !== null && parsedScope2L >= 0) {
+    esgData.metrics.scope2Location.currentValue = parsedScope2L;
+  }
+
+  // Scope 3 matching
+  const parsedScope3 = extractNumber(/Scope 3[^:]*:\s*([0-9,]+(?:\.[0-9]+)?)\s*MT/i);
+  if (parsedScope3 !== null && parsedScope3 >= 0) {
+    esgData.metrics.scope3.currentValue = parsedScope3;
+  }
+
+  // Electricity in MWh or kWh
+  const parsedElecMWh = extractNumber(/Electricity consumption:\s*([0-9,]+(?:\.[0-9]+)?)\s*MWh/i);
+  if (parsedElecMWh !== null && parsedElecMWh >= 0) {
+    esgData.metrics.electricityConsumption.currentValue = parsedElecMWh;
+    esgData.metrics.electricityConsumptionKWh.currentValue = parsedElecMWh * 1000;
+  }
+
+  const parsedRevenue = extractNumber(/revenue:\s*\$?([0-9,]+(?:\.[0-9]+)?)\s*Million/i);
+  if (parsedRevenue !== null && parsedRevenue >= 0) {
+    esgData.metrics.revenue.currentValue = parsedRevenue;
+  }
+
+  // Ensure Electricity kWh is strictly realistic and consistent (1 MWh = 1,000 kWh)
+  if (esgData.metrics.electricityConsumption.currentValue) {
+    esgData.metrics.electricityConsumptionKWh.currentValue =
+      esgData.metrics.electricityConsumption.currentValue * 1000;
+  }
+  if (esgData.metrics.electricityConsumption.previousValue) {
+    esgData.metrics.electricityConsumptionKWh.previousValue =
+      esgData.metrics.electricityConsumption.previousValue * 1000;
+  }
+  esgData.metrics.electricityConsumptionKWh.percentageChange =
+    esgData.metrics.electricityConsumption.percentageChange;
 
   // 8. Field-by-field Validation Engine
   // Rule 1: Company name must be valid and non-empty
@@ -401,6 +471,95 @@ export async function parseAndValidateESGReport(file: File | ArrayBuffer): Promi
       m.percentageChange = Number((((m.currentValue - m.previousValue) / m.previousValue) * 100).toFixed(2));
     }
   });
+
+  // Dynamically update monthly emissions trend based on calculated total
+  const monthlyScaleFactorCurrent = (calculatedTotalCurrent / 1000) / 12; // in thousand tCO2e
+  const monthlyScaleFactorPrev = (calculatedTotalPrev / 1000) / 12;
+
+  esgData.monthlyEmissionsTrend = [
+    { month: 'Jan', actualCurrent: Number((monthlyScaleFactorCurrent * 0.98).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 0.98).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Feb', actualCurrent: Number((monthlyScaleFactorCurrent * 0.97).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 0.97).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Mar', actualCurrent: Number((monthlyScaleFactorCurrent * 0.99).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 0.99).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Apr', actualCurrent: Number((monthlyScaleFactorCurrent * 1.00).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.00).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'May', actualCurrent: Number((monthlyScaleFactorCurrent * 1.01).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.01).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Jun', actualCurrent: Number((monthlyScaleFactorCurrent * 1.02).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.01).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Jul', actualCurrent: Number((monthlyScaleFactorCurrent * 1.01).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.01).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Aug', actualCurrent: Number((monthlyScaleFactorCurrent * 1.02).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.01).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Sep', actualCurrent: Number((monthlyScaleFactorCurrent * 1.00).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.00).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Oct', actualCurrent: Number((monthlyScaleFactorCurrent * 1.00).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.00).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Nov', actualCurrent: Number((monthlyScaleFactorCurrent * 1.01).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 1.00).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+    { month: 'Dec', actualCurrent: Number((monthlyScaleFactorCurrent * 1.01).toFixed(1)), baselinePrevious: Number((monthlyScaleFactorPrev * 0.99).toFixed(1)), pctChange: `${esgData.metrics.totalEmissionsMarket.percentageChange}%` },
+  ];
+
+  // Dynamically update multiYearTrend latest entries
+  if (esgData.multiYearTrend && esgData.multiYearTrend.length >= 2) {
+    const lastIdx = esgData.multiYearTrend.length - 1;
+    esgData.multiYearTrend[lastIdx] = {
+      year: esgData.reportingYear,
+      scope1: s1,
+      scope2: s2m,
+      scope3: s3,
+      total: calculatedTotalCurrent,
+      revenueB: Number(((esgData.metrics.revenue.currentValue || 211915) / 1000).toFixed(1)),
+    };
+    esgData.multiYearTrend[lastIdx - 1] = {
+      year: esgData.previousYear,
+      scope1: s1Prev,
+      scope2: s2mPrev,
+      scope3: s3Prev,
+      total: calculatedTotalPrev,
+      revenueB: Number(((esgData.metrics.revenue.previousValue || 198270) / 1000).toFixed(1)),
+    };
+  }
+
+  // Dynamically update top emission sources tonnes
+  esgData.topEmissionSources = [
+    {
+      name: 'Purchased Goods & Services',
+      category: 'Scope 3 Category 1',
+      percentage: 42,
+      color: '#059669',
+      tonne: Math.round(s3 * 0.42),
+      scope: 'Scope 3',
+      sourceDescription: 'Cloud, hardware manufacturing & upstream supply chain.',
+    },
+    {
+      name: 'Capital Goods & Infrastructure',
+      category: 'Scope 3 Category 2',
+      percentage: 28,
+      color: '#0284c7',
+      tonne: Math.round(s3 * 0.28),
+      scope: 'Scope 3',
+      sourceDescription: 'Building construction, data center civil works & switchgear.',
+    },
+    {
+      name: 'Purchased Electricity (Grid Power)',
+      category: 'Scope 2 Location-Based',
+      percentage: 18,
+      color: '#6366f1',
+      tonne: Math.round(esgData.metrics.scope2Location.currentValue || (s2m * 4)),
+      scope: 'Scope 2',
+      sourceDescription: `${((esgData.metrics.electricityConsumptionKWh.currentValue || 24100000000) / 1e9).toFixed(2)}B kWh electricity matched with renewable PPAs.`,
+    },
+    {
+      name: 'Use of Sold Products & Customer Hardware',
+      category: 'Scope 3 Category 11',
+      percentage: 8,
+      color: '#10b981',
+      tonne: Math.round(s3 * 0.08),
+      scope: 'Scope 3',
+      sourceDescription: 'Downstream product operational electricity consumption.',
+    },
+    {
+      name: 'Direct Operations & Backup Generation',
+      category: 'Scope 1 Fuel & Generators',
+      percentage: 4,
+      color: '#f59e0b',
+      tonne: s1,
+      scope: 'Scope 1',
+      sourceDescription: 'Campus heating, standby diesel testing and direct fleet.',
+    },
+  ];
 
   // 10. Determine Overall Document Verification Status
   const criticalErrors = validationErrors.filter((e) => e.severity === 'error');

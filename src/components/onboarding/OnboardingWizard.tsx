@@ -26,9 +26,9 @@ const INDUSTRIES = [
 
 const SIZES = [
   { id: 8, label: '1–10 employees', desc: 'Micro business / studio' },
-  { id: 42, label: '11–50 employees', desc: 'Small enterprise (GreenBrew benchmark)' },
+  { id: 42, label: '11–50 employees', desc: 'Small enterprise' },
   { id: 150, label: '51–250 employees', desc: 'Mid-sized operations' },
-  { id: 450, label: '250+ employees', desc: 'Scaling enterprise' },
+  { id: 450, label: '250+ employees', desc: 'Enterprise & cloud scale' },
 ];
 
 const GOALS = [
@@ -43,14 +43,14 @@ export const OnboardingWizard: React.FC = () => {
   const { business, completeOnboarding } = useApp();
 
   const [step, setStep] = useState(1);
-  const [name, setName] = useState(business.name || 'GreenBrew Foods Pvt. Ltd.');
-  const [industry, setIndustry] = useState(business.industry || 'Food & Beverage');
-  const [employees, setEmployees] = useState(business.employees || 42);
-  const [country, setCountry] = useState(business.country || 'India');
-  const [city, setCity] = useState(business.city || 'Bengaluru');
-  const [goal, setGoal] = useState(business.carbonGoal || 'Reduce emissions & costs');
-  const [targetPct, setTargetPct] = useState(business.targetReductionPct || 30);
-  const [targetYear, setTargetYear] = useState(business.targetYear || 2028);
+  const [name, setName] = useState(business.name || 'Microsoft Corporation');
+  const [industry, setIndustry] = useState(business.industry || 'Cloud Computing & Digital Infrastructure');
+  const [employees, setEmployees] = useState(business.employees || 221000);
+  const [country, setCountry] = useState(business.country || 'United States');
+  const [city, setCity] = useState(business.city || 'Redmond, WA');
+  const [goal, setGoal] = useState(business.carbonGoal || 'Carbon Negative by 2030');
+  const [targetPct, setTargetPct] = useState(business.targetReductionPct || 55);
+  const [targetYear, setTargetYear] = useState(business.targetYear || 2030);
 
   const handleFinish = () => {
     completeOnboarding({

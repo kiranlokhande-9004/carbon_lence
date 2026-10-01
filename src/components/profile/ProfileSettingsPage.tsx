@@ -273,7 +273,7 @@ export const ProfileSettingsPage: React.FC = () => {
         <div>
           <h4 className="font-semibold text-sm text-slate-900">Reset Demo Workspace</h4>
           <p className="text-xs text-slate-500 mt-0.5">
-            Reload the benchmark food & beverage enterprise dataset (GreenBrew Foods Pvt. Ltd.).
+            Reload verified Microsoft Corporation (NASDAQ: MSFT) official public ESG dataset.
           </p>
         </div>
         <button

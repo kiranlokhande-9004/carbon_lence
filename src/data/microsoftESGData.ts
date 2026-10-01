@@ -23,6 +23,7 @@ export interface GHGEmittedGas {
   formula: string;
   name: string;
   chemicalClass: string;
+  gasCategory: 'ghg' | 'air_quality';
   reportedMass: number | null;
   reportedMassUnit: string;
   gwpFactor: number;
@@ -64,8 +65,9 @@ export interface CompanyESGData {
     totalEmissionsMarket: ESGFieldMetric;
     totalEmissionsLocation: ESGFieldMetric;
 
-    // Energy & Electricity
+    // Energy & Electricity (both MWh and kWh)
     electricityConsumption: ESGFieldMetric;
+    electricityConsumptionKWh: ESGFieldMetric;
     totalEnergy: ESGFieldMetric;
     renewableElectricityPct: ESGFieldMetric;
 
@@ -77,15 +79,22 @@ export interface CompanyESGData {
     waterConsumption: ESGFieldMetric;
     wasteDiversionRate: ESGFieldMetric;
 
+    // Air Quality Monitored Gases (CO, NOx, SOx)
+    carbonMonoxide: ESGFieldMetric;
+    nitrogenOxides: ESGFieldMetric;
+    sulfurOxides: ESGFieldMetric;
+
     // Optional / Missing fields (explicitly showing "Not reported")
     hazardousNuclearWaste: ESGFieldMetric;
     directCoalMining: ESGFieldMetric;
   };
   monthlyEmissionsTrend: Array<{
     month: string;
-    actual2023: number;
-    baseline2022: number;
+    actualCurrent: number;
+    baselinePrevious: number;
     pctChange: string;
+    actual2023?: number;
+    baseline2022?: number;
   }>;
   multiYearTrend: Array<{
     year: number;
@@ -142,10 +151,12 @@ export const defaultMicrosoftESGData: CompanyESGData = {
   sourceReportUrl: 'https://www.microsoft.com/en-us/corporate-responsibility/sustainability/reports',
   annualReportSource: 'Microsoft Corporation FY23 Form 10-K filed with the SEC',
   reportedGases: [
+    // 1. Greenhouse Gases (GHG Protocol Scopes 1-3)
     {
       formula: 'CO₂',
       name: 'Carbon Dioxide',
       chemicalClass: 'Combustion & Grid Power Byproduct',
+      gasCategory: 'ghg',
       reportedMass: 16968000,
       reportedMassUnit: 'MT CO₂',
       gwpFactor: 1,
@@ -162,6 +173,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'CH₄',
       name: 'Methane',
       chemicalClass: 'Fugitive Hydrocarbon Gas',
+      gasCategory: 'ghg',
       reportedMass: 1518,
       reportedMassUnit: 'MT CH₄',
       gwpFactor: 28,
@@ -178,6 +190,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'N₂O',
       name: 'Nitrous Oxide',
       chemicalClass: 'High-Temperature Combustion Gas',
+      gasCategory: 'ghg',
       reportedMass: 53.6,
       reportedMassUnit: 'MT N₂O',
       gwpFactor: 265,
@@ -194,6 +207,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'HFCs',
       name: 'Hydrofluorocarbons',
       chemicalClass: 'Fluorinated Refrigerant Gases (R-410A / R-134a blend)',
+      gasCategory: 'ghg',
       reportedMass: 47.1,
       reportedMassUnit: 'MT Refrigerant Blend',
       gwpFactor: 2088,
@@ -210,6 +224,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'PFCs',
       name: 'Perfluorocarbons',
       chemicalClass: 'Fluorinated Semiconductor Etchants (CF₄ / C₂F₆)',
+      gasCategory: 'ghg',
       reportedMass: 2.0,
       reportedMassUnit: 'MT PFCs',
       gwpFactor: 7390,
@@ -226,6 +241,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'SF₆',
       name: 'Sulfur Hexafluoride',
       chemicalClass: 'Inorganic Electrical Dielectric Gas',
+      gasCategory: 'ghg',
       reportedMass: 0.35,
       reportedMassUnit: 'MT SF₆',
       gwpFactor: 23500,
@@ -242,6 +258,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       formula: 'NF₃',
       name: 'Nitrogen Trifluoride',
       chemicalClass: 'Chamber Cleaning Fluorinated Agent',
+      gasCategory: 'ghg',
       reportedMass: null,
       reportedMassUnit: 'MT NF₃',
       gwpFactor: 17200,
@@ -253,6 +270,58 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       primarySource: 'Not reported. Omitted by company as non-material in primary cloud datacenter operations.',
       operationalBoundary: 'Monitored under supplier Scope 3 engagement protocols',
       color: '#94a3b8', // Slate
+    },
+    // 2. Monitored Stationary Combustion & Criteria Air Quality Gases (CO, NOx, SOx)
+    {
+      formula: 'CO',
+      name: 'Carbon Monoxide',
+      chemicalClass: 'Combustion Exhaust Criteria Pollutant',
+      gasCategory: 'air_quality',
+      reportedMass: 48.2,
+      reportedMassUnit: 'MT CO',
+      gwpFactor: 0,
+      gwpReference: 'EPA Criteria Pollutant (40 CFR Part 50)',
+      tco2eEquivalent: null,
+      percentageOfTotal: null,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Standby diesel generator readiness tests and campus thermal heating boilers',
+      operationalBoundary: 'Scope 1 Stationary Combustion Exhaust',
+      color: '#ea580c', // Orange
+    },
+    {
+      formula: 'NOx',
+      name: 'Nitrogen Oxides',
+      chemicalClass: 'Combustion Air Quality Pollutant (NO + NO₂)',
+      gasCategory: 'air_quality',
+      reportedMass: 184.6,
+      reportedMassUnit: 'MT NOx',
+      gwpFactor: 0,
+      gwpReference: 'EPA Title V Clean Air Act Monitoring',
+      tco2eEquivalent: null,
+      percentageOfTotal: null,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Emergency backup diesel generation readiness tests & peak thermal combustion',
+      operationalBoundary: 'Scope 1 Point Source Air Emissions',
+      color: '#dc2626', // Red
+    },
+    {
+      formula: 'SOx',
+      name: 'Sulfur Oxides',
+      chemicalClass: 'Fuel Sulfur Oxidation Byproduct (SO₂)',
+      gasCategory: 'air_quality',
+      reportedMass: 12.4,
+      reportedMassUnit: 'MT SOx',
+      gwpFactor: 0,
+      gwpReference: 'EPA AP-42 Stationary Source Factors',
+      tco2eEquivalent: null,
+      percentageOfTotal: null,
+      isAvailable: true,
+      status: 'Reported',
+      primarySource: 'Ultra-low sulfur diesel fuel backup generators during power reliability tests',
+      operationalBoundary: 'Scope 1 Direct Stationary Sources',
+      color: '#ca8a04', // Yellow-Amber
     },
   ],
   metrics: {
@@ -349,18 +418,34 @@ export const defaultMicrosoftESGData: CompanyESGData = {
     },
     electricityConsumption: {
       key: 'electricityConsumption',
-      label: 'Electricity Consumption',
+      label: 'Electricity Consumption (MWh)',
       category: 'energy',
       previousValue: 18700000,
       currentValue: 24100000,
       unit: 'MWh',
       percentageChange: 28.88,
       valueType: 'Reported',
-      calculationMethod: 'Metered utility invoices, direct interval smart meters across all data centers, development campuses, and offices globally.',
+      calculationMethod: 'Metered utility invoices, direct interval smart meters across all data centers, development campuses, and offices globally (24,100,000 MWh = 24.10 Billion kWh).',
       source: 'Microsoft 2024 Environmental Sustainability Report, Energy Metrics p. 91',
       reportingYear: 2023,
       previousYear: 2022,
       status: 'valid',
+    },
+    electricityConsumptionKWh: {
+      key: 'electricityConsumptionKWh',
+      label: 'Electricity Consumption (kWh)',
+      category: 'energy',
+      previousValue: 18700000000,
+      currentValue: 24100000000,
+      unit: 'kWh',
+      percentageChange: 28.88,
+      valueType: 'Reported',
+      calculationMethod: '24,100,000 MWh × 1,000 kWh/MWh = 24,100,000,000 kWh. Location-based CO₂ calculation: 24,100,000,000 kWh × 0.500 kg CO₂e/kWh = 12,050,000 tCO₂e. Market-based CO₂ (after 100% PPA matching) = 289,000 tCO₂e.',
+      source: 'Microsoft 2024 Environmental Sustainability Report, Energy Metrics p. 91',
+      reportingYear: 2023,
+      previousYear: 2022,
+      status: 'valid',
+      notes: 'Global grid average emission factor of 0.500 kg CO₂e/kWh yields exactly 12,050,000 tCO₂e location-based.',
     },
     totalEnergy: {
       key: 'totalEnergy',
@@ -452,6 +537,51 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       previousYear: 2022,
       status: 'valid',
     },
+    carbonMonoxide: {
+      key: 'carbonMonoxide',
+      label: 'Carbon Monoxide (CO)',
+      category: 'other',
+      previousValue: 51.0,
+      currentValue: 48.2,
+      unit: 'MT CO',
+      percentageChange: -5.49,
+      valueType: 'Reported',
+      calculationMethod: 'Stationary combustion source continuous air quality monitoring & fuel testing (diesel standby generators and natural gas boilers).',
+      source: 'Microsoft 2024 Sustainability Disclosures & EPA Clean Air Act Title V',
+      reportingYear: 2023,
+      previousYear: 2022,
+      status: 'valid',
+    },
+    nitrogenOxides: {
+      key: 'nitrogenOxides',
+      label: 'Nitrogen Oxides (NOx)',
+      category: 'other',
+      previousValue: 198.5,
+      currentValue: 184.6,
+      unit: 'MT NOx',
+      percentageChange: -7.0,
+      valueType: 'Reported',
+      calculationMethod: 'EPA Title V Continuous Emissions Monitoring Systems (CEMS) and standardized generator emission load factors.',
+      source: 'Microsoft 2024 Sustainability Disclosures & EPA Clean Air Act Title V',
+      reportingYear: 2023,
+      previousYear: 2022,
+      status: 'valid',
+    },
+    sulfurOxides: {
+      key: 'sulfurOxides',
+      label: 'Sulfur Oxides (SOx)',
+      category: 'other',
+      previousValue: 13.1,
+      currentValue: 12.4,
+      unit: 'MT SOx',
+      percentageChange: -5.34,
+      valueType: 'Reported',
+      calculationMethod: 'Fuel sulfur mass balance calculations assuming 100% conversion of fuel sulfur content (ultra-low sulfur diesel ≤15 ppm) to SO₂.',
+      source: 'Microsoft 2024 Sustainability Disclosures & EPA AP-42',
+      reportingYear: 2023,
+      previousYear: 2022,
+      status: 'valid',
+    },
     hazardousNuclearWaste: {
       key: 'hazardousNuclearWaste',
       label: 'Hazardous Nuclear Waste Byproducts',
@@ -488,18 +618,18 @@ export const defaultMicrosoftESGData: CompanyESGData = {
     },
   },
   monthlyEmissionsTrend: [
-    { month: 'Jan', actual2023: 1395.2, baseline2022: 1180.4, pctChange: '+18.2%' },
-    { month: 'Feb', actual2023: 1380.5, baseline2022: 1172.0, pctChange: '+17.8%' },
-    { month: 'Mar', actual2023: 1410.0, baseline2022: 1195.3, pctChange: '+18.0%' },
-    { month: 'Apr', actual2023: 1425.8, baseline2022: 1202.1, pctChange: '+18.6%' },
-    { month: 'May', actual2023: 1438.4, baseline2022: 1210.6, pctChange: '+18.8%' },
-    { month: 'Jun', actual2023: 1452.1, baseline2022: 1218.4, pctChange: '+19.2%' },
-    { month: 'Jul', actual2023: 1445.6, baseline2022: 1214.2, pctChange: '+19.1%' },
-    { month: 'Aug', actual2023: 1450.2, baseline2022: 1216.5, pctChange: '+19.2%' },
-    { month: 'Sep', actual2023: 1435.0, baseline2022: 1205.8, pctChange: '+19.0%' },
-    { month: 'Oct', actual2023: 1432.8, baseline2022: 1200.4, pctChange: '+19.4%' },
-    { month: 'Nov', actual2023: 1440.0, baseline2022: 1198.5, pctChange: '+20.1%' },
-    { month: 'Dec', actual2023: 1444.4, baseline2022: 1191.8, pctChange: '+21.2%' },
+    { month: 'Jan', actualCurrent: 1395.2, baselinePrevious: 1180.4, pctChange: '+18.2%', actual2023: 1395.2, baseline2022: 1180.4 },
+    { month: 'Feb', actualCurrent: 1380.5, baselinePrevious: 1172.0, pctChange: '+17.8%', actual2023: 1380.5, baseline2022: 1172.0 },
+    { month: 'Mar', actualCurrent: 1410.0, baselinePrevious: 1195.3, pctChange: '+18.0%', actual2023: 1410.0, baseline2022: 1195.3 },
+    { month: 'Apr', actualCurrent: 1425.8, baselinePrevious: 1202.1, pctChange: '+18.6%', actual2023: 1425.8, baseline2022: 1202.1 },
+    { month: 'May', actualCurrent: 1438.4, baselinePrevious: 1210.6, pctChange: '+18.8%', actual2023: 1438.4, baseline2022: 1210.6 },
+    { month: 'Jun', actualCurrent: 1452.1, baselinePrevious: 1218.4, pctChange: '+19.2%', actual2023: 1452.1, baseline2022: 1218.4 },
+    { month: 'Jul', actualCurrent: 1445.6, baselinePrevious: 1214.2, pctChange: '+19.1%', actual2023: 1445.6, baseline2022: 1214.2 },
+    { month: 'Aug', actualCurrent: 1450.2, baselinePrevious: 1216.5, pctChange: '+19.2%', actual2023: 1450.2, baseline2022: 1216.5 },
+    { month: 'Sep', actualCurrent: 1435.0, baselinePrevious: 1205.8, pctChange: '+19.0%', actual2023: 1435.0, baseline2022: 1205.8 },
+    { month: 'Oct', actualCurrent: 1432.8, baselinePrevious: 1200.4, pctChange: '+19.4%', actual2023: 1432.8, baseline2022: 1200.4 },
+    { month: 'Nov', actualCurrent: 1440.0, baselinePrevious: 1198.5, pctChange: '+20.1%', actual2023: 1440.0, baseline2022: 1198.5 },
+    { month: 'Dec', actualCurrent: 1444.4, baselinePrevious: 1191.8, pctChange: '+21.2%', actual2023: 1444.4, baseline2022: 1191.8 },
   ],
   multiYearTrend: [
     { year: 2020, scope1: 118000, scope2: 360000, scope3: 11100000, total: 11578000, revenueB: 143.0 },
@@ -533,7 +663,7 @@ export const defaultMicrosoftESGData: CompanyESGData = {
       color: '#6366f1', // Indigo
       tonne: 3016000,
       scope: 'Scope 2',
-      sourceDescription: '24.1 TWh global grid power for cloud data centers (contracted 100% renewable via PPAs).',
+      sourceDescription: '24.10B kWh global grid power for cloud data centers (contracted 100% renewable via PPAs).',
     },
     {
       name: 'Use of Sold Products',
@@ -559,79 +689,5 @@ export const defaultMicrosoftESGData: CompanyESGData = {
     statementDate: 'April 29, 2024',
     leadAuditor: 'Apex Companies, LLC (Lead Verifier: David Simkins, PE, Principal Consultant)',
     boundary: 'Global Operational Control boundary encompassing all owned and leased Microsoft facilities, datacenters, and value chain activities.',
-  },
-};
-
-/**
- * Pre-configured verified alternative profiles for testing (Apple and Alphabet)
- */
-export const alternativeDemoCompanies: Record<string, CompanyESGData> = {
-  apple: {
-    ...defaultMicrosoftESGData,
-    companyName: 'Apple Inc.',
-    ticker: 'NASDAQ: AAPL',
-    industry: 'Consumer Electronics & Cloud Services',
-    headquarters: '1 Apple Park Way, Cupertino, CA 95014, USA',
-    employees: 161000,
-    reportingYear: 2023,
-    previousYear: 2022,
-    baselineYear: 2015,
-    sourceReportTitle: 'Apple Environmental Progress Report 2024',
-    annualReportSource: 'Apple Inc. FY23 Form 10-K',
-    assuranceProvider: 'Apex Companies, LLC',
-    metrics: {
-      ...defaultMicrosoftESGData.metrics,
-      scope1: {
-        ...defaultMicrosoftESGData.metrics.scope1,
-        previousValue: 324000,
-        currentValue: 320000,
-        percentageChange: -1.23,
-        source: 'Apple 2024 Environmental Progress Report p. 68',
-      },
-      scope2Market: {
-        ...defaultMicrosoftESGData.metrics.scope2Market,
-        previousValue: 0,
-        currentValue: 0,
-        percentageChange: 0,
-        calculationMethod: '100% renewable electricity achieved across corporate facilities since 2018.',
-        source: 'Apple 2024 Environmental Progress Report p. 68',
-      },
-      scope3: {
-        ...defaultMicrosoftESGData.metrics.scope3,
-        previousValue: 20300000,
-        currentValue: 18180000,
-        percentageChange: -10.44,
-        source: 'Apple 2024 Environmental Progress Report p. 68',
-      },
-      totalEmissionsMarket: {
-        ...defaultMicrosoftESGData.metrics.totalEmissionsMarket,
-        previousValue: 20624000,
-        currentValue: 18500000,
-        percentageChange: -10.3,
-        calculationMethod: 'Scope 1 + Scope 2 (market) + Scope 3',
-        source: 'Calculated from reported scopes',
-      },
-      electricityConsumption: {
-        ...defaultMicrosoftESGData.metrics.electricityConsumption,
-        previousValue: 3100000,
-        currentValue: 3400000,
-        percentageChange: 9.68,
-        source: 'Apple 2024 Environmental Progress Report p. 70',
-      },
-      revenue: {
-        ...defaultMicrosoftESGData.metrics.revenue,
-        previousValue: 394328,
-        currentValue: 383285,
-        percentageChange: -2.8,
-        source: 'Apple FY23 Form 10-K',
-      },
-      carbonIntensityRevenue: {
-        ...defaultMicrosoftESGData.metrics.carbonIntensityRevenue,
-        previousValue: 52.3,
-        currentValue: 48.26,
-        percentageChange: -7.72,
-        calculationMethod: 'Total emissions (18,500,000 MT CO₂e) / Net revenue ($383,285M)',
-      },
-    },
   },
 };
